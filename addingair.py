@@ -77,7 +77,7 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
 
     f = open('tempsalinity.csv')
     csv_f = csv.reader(f)
-
+ 
 
     reader = csv.reader(open("tempsalinity.csv","rb"),delimiter=',')
     result = np.array(list(reader)).astype('float')
@@ -94,8 +94,8 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
         speed_arr[counter]=speed
   
     y_values = y.centers[::-1]
-    yinterp = np.interp(-y_values, depth, speed_arr)
-    
+    yinterp = np.flipud(np.interp(-y_values, depth, speed_arr))
+    y_values = np.flipud(y_values)
     import math
     for j in xrange(num_cells[1]):
         for i in xrange(num_cells[0]):
@@ -117,22 +117,22 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     print state.aux[0, 100, :]
     print state.aux[1, 100, :]
     print y_values
-    
+    """
     import matplotlib.pyplot as plt
     fig = plt.figure()
     ax=fig.add_subplot(111)
-    plt.scatter(state.aux[0, 100, :],y_values)
+    plt.scatter(state.aux[1, 100, :],y_values)
     plt.show()
-    """
+    
 
     # Set initial condition
-    x0 =2000 ; y0 = -800;
+    x0 =2000 ; y0 = -5300;
     r = np.sqrt((X-x0)**2 + (Y-y0)**2)
     width = 500.0; rad = 500
     amplitude = 1.0
     #ADJUSTING THE PRESSURE
     #state.q[0,:,:] = (np.abs(r-rad)<=width)*(1.+np.cos(np.pi*(r-rad)/width))
-    state.q[0, :, :] = amplitude * np.exp(-(X - x0)**2 / width**2) * np.exp(-(Y - y0)**2 / width**2)
+    state.q[0, :, :] = amplitude * np.exp(-(X - x0)**2 / width**2) #* np.exp(-(Y - y0)**2 / width**2)
     #ADJUSTING THE PRESSURE
     state.q[1,:,:] = 0.
     state.q[2,:,:] = 0.
@@ -143,7 +143,7 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
     claw.outdir = outdir
-    claw.tfinal = 100
+    claw.tfinal = 10
     claw.num_output_times = 10
     claw.write_aux_init = True
     claw.setplot = setplot
