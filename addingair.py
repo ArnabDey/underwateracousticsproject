@@ -22,7 +22,7 @@ import numpy as np
 
 def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output', 
           solver_type='classic', time_integrator='SSP104', lim_type=2, 
-          disable_output=False, num_cells=(1000,530)):
+          disable_output=False, num_cells=(1000,520)):
     """
     Example python script for solving the 2d acoustics equations.
     """
@@ -55,7 +55,7 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     solver.aux_bc_upper[1]=pyclaw.BC.extrap
 
     x = pyclaw.Dimension(0.,100000.,num_cells[0],name='x')   #Scale of Graph    0.,10000.
-    y = pyclaw.Dimension(-5300.,1000.,num_cells[1],name='y')  #-7000.,100.
+    y = pyclaw.Dimension(-5200.,1000.,num_cells[1],name='y')  #-7000.,100.
     domain = pyclaw.Domain([x,y])
 
     num_eqn = 3
@@ -82,17 +82,16 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     reader = csv.reader(open("tempsalinity.csv","rb"),delimiter=',')
     result = np.array(list(reader)).astype('float')
     depth= result[0]
-    temperature = result [1]
-    salinity = result [2]
-    speed_arr=np.ndarray((53,), float)
+    salinity = result [1]
+    temperature = result [2]
+    speed_arr=np.ndarray((51,), float)
   
-    for counter in range (0,53):
+    for counter in range (0,51):
         T = temperature[counter]
         S = salinity[counter]
         D = depth[counter]
         speed = 1448.96 + 4.591*T-5.304e-2*(T**2)+2.374e-4*(T**3)+1.340*(S-35)+1.630e-2*D+1.675e-7*(D**2)-1.025e-2*T*(S-35)-7.139e-13*T*(D**3)
         speed_arr[counter]=speed
-  
     y_values = y.centers[::-1]
     yinterp = np.flipud(np.interp(-y_values, depth, speed_arr))
     y_values = np.flipud(y_values)
@@ -143,7 +142,7 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
     claw.outdir = outdir
-    claw.tfinal = 10
+    claw.tfinal = 100
     claw.num_output_times = 10
     claw.write_aux_init = True
     claw.setplot = setplot
