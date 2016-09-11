@@ -22,7 +22,7 @@ import numpy as np
 
 def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output', 
           solver_type='classic', time_integrator='SSP104', lim_type=2, 
-          disable_output=False, num_cells=(1000,520)):
+          disable_output=False, num_cells=(1000,52)):
     """
     Example python script for solving the 2d acoustics equations.
     """
@@ -48,14 +48,14 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     solver.bc_lower[0]=pyclaw.BC.extrap
     solver.bc_upper[0]=pyclaw.BC.extrap
     solver.bc_lower[1]=pyclaw.BC.wall
-    solver.bc_upper[1]=pyclaw.BC.extrap
+    solver.bc_upper[1]=pyclaw.BC.wall
     solver.aux_bc_lower[0]=pyclaw.BC.extrap
     solver.aux_bc_upper[0]=pyclaw.BC.extrap
     solver.aux_bc_lower[1]=pyclaw.BC.extrap
     solver.aux_bc_upper[1]=pyclaw.BC.extrap
 
-    x = pyclaw.Dimension(0.,100000.,num_cells[0],name='x')   #Scale of Graph    0.,10000.
-    y = pyclaw.Dimension(-5200.,1000.,num_cells[1],name='y')  #-7000.,100.
+    x = pyclaw.Dimension(0.,1000000.,num_cells[0],name='x')   #Scale of Graph    0.,10000.
+    y = pyclaw.Dimension(-5200.,0.0,num_cells[1],name='y')  #-7000.,100.
     domain = pyclaw.Domain([x,y])
 
     num_eqn = 3
@@ -74,11 +74,9 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     import numpy as np
     import csv
 
-
-    f = open('tempsalinity.csv')
-    csv_f = csv.reader(f)
+    # f = open('tempsalinity.csv')
+    # csv_f = csv.reader(f)
  
-
     reader = csv.reader(open("tempsalinity.csv","rb"),delimiter=',')
     result = np.array(list(reader)).astype('float')
     depth= result[0]
@@ -112,26 +110,14 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
                 state.aux[0, i, j] = rho_3
             elif y_values[j] < -4000 and y_values[j] >= -5400:
                 state.aux[0, i, j] = rho_4
-    """
-    print state.aux[0, 100, :]
-    print state.aux[1, 100, :]
-    print y_values
-    """
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    ax=fig.add_subplot(111)
-    plt.scatter(state.aux[1, 100, :],y_values)
-    plt.show()
-    
 
     # Set initial condition
-    x0 =2000 ; y0 = -5300;
+    x0 =5000.0 ; y0 = -1000;
     r = np.sqrt((X-x0)**2 + (Y-y0)**2)
     width = 500.0; rad = 500
     amplitude = 1.0
     #ADJUSTING THE PRESSURE
-    #state.q[0,:,:] = (np.abs(r-rad)<=width)*(1.+np.cos(np.pi*(r-rad)/width))
-    state.q[0, :, :] = amplitude * np.exp(-(X - x0)**2 / width**2) #* np.exp(-(Y - y0)**2 / width**2)
+    state.q[0, :, :] = amplitude * np.exp(-(X - x0)**2 / width**2)
     #ADJUSTING THE PRESSURE
     state.q[1,:,:] = 0.
     state.q[2,:,:] = 0.
@@ -142,69 +128,16 @@ def setup(kernel_language='Fortran', use_petsc=False, outdir='./_output',
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
     claw.outdir = outdir
-    claw.tfinal = 100
-    claw.num_output_times = 10
+    claw.tfinal = 1000
+    claw.num_output_times = 100
     claw.write_aux_init = True
-    claw.setplot = setplot
+    claw.setplot = "./setplot.py"
     if use_petsc:
         claw.output_options = {'format':'binary'}
 
     return claw
 
-def setplot(plotdata):
-    """ 
-    Plot solution using VisClaw.
-
-    This example shows how to mark an internal boundary on a 2D plot.
-    """ 
-
-    from clawpack.visclaw import colormaps
-
-    plotdata.clearfigures()  # clear any old figures,axes,items data
-    
-    # Figure for pressure
-    plotfigure = plotdata.new_plotfigure(name='Pressure', figno=0)
-
-    # Set up for axes in this figure:
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.title = 'Pressure'
-    plotaxes.scaled = True      # so aspect ratio is 1
-    plotaxes.afteraxes = mark_interface
-
-    # Set up for item on these axes:
-    plotitem = plotaxes.new_plotitem(plot_type='2d_pcolor')
-    plotitem.plot_var = 0
-    plotitem.pcolor_cmap = colormaps.yellow_red_blue
-    plotitem.add_colorbar = True
-    plotitem.pcolor_cmin = 0
-    plotitem.pcolor_cmax=1.0
-    
-    # Figure for x-velocity plot
-    plotfigure = plotdata.new_plotfigure(name='x-Velocity', figno=1)
-
-    # Set up for axes in this figure:
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.title = 'u'
-    plotaxes.afteraxes = mark_interface
-
-    plotitem = plotaxes.new_plotitem(plot_type='2d_pcolor')
-    plotitem.plot_var = 1
-    plotitem.pcolor_cmap = colormaps.yellow_red_blue
-    plotitem.add_colorbar = True
-    plotitem.pcolor_cmin = -0.3
-    plotitem.pcolor_cmax=   0.3
-    
-    return plotdata
-def mark_interface(current_data):
-    import matplotlib.pyplot as plt
-"""
-    plt.plot((0.,100000.),(0.,0.),'-k',linewidth=2)
-    plt.plot((0.,100000.),(-200.,-200.),'-k',linewidth=2)
-    plt.plot((0.,100000.),(-1000.,-1000.),'-k',linewidth=2)
-    plt.plot((0.,100000.),(-4000.,-4000.),'-k',linewidth=2)
-    plt.plot((0.,100000.),(-6000.,-6000.),'-k',linewidth=2)
-"""
 
 if __name__=="__main__":
     from clawpack.pyclaw.util import run_app_from_main
-    output = run_app_from_main(setup,setplot)
+    output = run_app_from_main(setup, "./setplot.py")
